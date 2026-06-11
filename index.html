@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ペプチド結合 電子雲 AR (マーカーレス) | 状態切替付き</title>
+    <title>ペプチド結合 電子雲変化 3Dビジュアライザー created by junnosuke shimura</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', 'Helvetica Neue', 'Noto Sans', system-ui, sans-serif;
         }
         #info {
             position: absolute;
@@ -17,65 +17,73 @@
             background: rgba(0,0,0,0.7);
             backdrop-filter: blur(8px);
             color: white;
-            padding: 10px 18px;
+            padding: 12px 20px;
             border-radius: 12px;
             pointer-events: none;
             z-index: 10;
-            border-left: 5px solid #ffaa44;
+            border-left: 5px solid #ff3366;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
             font-size: 14px;
-            max-width: 260px;
+            max-width: 280px;
         }
-        #controls {
+        #title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        #sub {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        .controls-panel {
             position: absolute;
             bottom: 25px;
-            left: 0;
-            right: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            z-index: 20;
-            pointer-events: none;
-        }
-        .state-buttons {
+            left: 50%;
+            transform: translateX(-50%);
             background: rgba(30,30,40,0.85);
             backdrop-filter: blur(12px);
             border-radius: 50px;
-            padding: 8px 16px;
+            padding: 12px 20px;
             display: flex;
-            gap: 8px;
+            gap: 12px;
+            z-index: 20;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            pointer-events: auto;
             flex-wrap: wrap;
             justify-content: center;
-            pointer-events: auto;
-            border: 1px solid rgba(255,255,255,0.2);
         }
         button {
             background: #1e2a3a;
             border: none;
             color: white;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 500;
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 40px;
             cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
             border-bottom: 2px solid #3a5a7a;
-            transition: 0.1s;
         }
-        button:active {
-            transform: scale(0.96);
+        button:hover {
+            background: #2c3e50;
+            transform: translateY(-2px);
         }
         button.active {
             background: #ff6b4a;
             border-bottom-color: #ffaa88;
-            box-shadow: 0 0 8px rgba(255,107,74,0.5);
+            color: white;
+            box-shadow: 0 0 12px rgba(255,107,74,0.5);
         }
-        #arButton {
-            background: #ff6b4a;
-            font-size: 18px;
-            padding: 12px 24px;
-            border-bottom-color: #aa4433;
-            pointer-events: auto;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        .anim-btn {
+            background: #2c5a3e;
+            border-bottom-color: #6aaa6a;
+        }
+        .anim-btn.stop {
+            background: #8b3c2c;
+            border-bottom-color: #cc7755;
         }
         .status {
             position: absolute;
@@ -84,10 +92,10 @@
             background: rgba(0,0,0,0.6);
             padding: 6px 12px;
             border-radius: 20px;
-            color: #ffdd99;
-            font-size: 11px;
-            pointer-events: none;
+            color: #ccc;
+            font-size: 12px;
             font-family: monospace;
+            pointer-events: none;
             z-index: 10;
         }
         .legend {
@@ -100,9 +108,11 @@
             border-radius: 16px;
             color: white;
             font-size: 12px;
-            border-right: 3px solid #ffaa44;
+            border-right: 3px solid #ff3366;
             pointer-events: none;
             z-index: 10;
+            font-weight: 500;
+            line-height: 1.4;
         }
         .legend span {
             display: inline-block;
@@ -121,41 +131,40 @@
             font-size: 10px;
             padding: 4px 10px;
             border-radius: 20px;
-            color: #ccc;
+            color: #aaa;
             pointer-events: none;
         }
         @media (max-width: 700px) {
+            button { padding: 5px 10px; font-size: 10px; }
             .legend { font-size: 9px; top: 10px; right: 10px; padding: 8px 12px; }
-            #info { font-size: 10px; top: 10px; left: 10px; max-width: 200px; }
-            button { font-size: 10px; padding: 5px 10px; }
-            #arButton { font-size: 16px; padding: 10px 20px; }
+            .controls-panel { gap: 6px; padding: 8px 16px; }
+            #info { font-size: 10px; top: 10px; left: 10px; max-width: 220px; }
         }
     </style>
 </head>
 <body>
     <div id="info">
-        <div>🧬 ペプチド結合 電子雲 AR</div>
-        <div style="font-size:12px;">マーカーレス | 状態ボタンで電子雲変化</div>
+        <div id="title">ペプチド結合 共鳴と電子雲変化</div>
+        <div id="sub">赤青メガネ対応</div>
     </div>
     <div class="legend">
-        <div><span style="background:#ff6666;"></span> π電子雲</div>
-        <div><span style="background:#44aaff;"></span> N孤立電子対</div>
-        <div><span style="background:#55ff77;"></span> O孤立電子対</div>
-        <div><span style="background:#ffaa44;"></span> H⁺</div>
-        <div><span style="background:#ffffff;"></span> C, O, N, H</div>
+        <div><span style="background: #ff3366; box-shadow:0 0 4px red;"></span> π電子雲 </div>
+        <div><span style="background: #33aaff; box-shadow:0 0 4px cyan;"></span> N上の孤立電子対</div>
+        <div><span style="background: #44ff66; box-shadow:0 0 4px lime;"></span> O孤立電子対</div>
+        <div style="margin-top:6px;"><span style="background: #ffaa44;"></span> H⁺ </div>
+        <div><span style="background: #ffffff;"></span> C(灰), O(赤), N(青), H(白)</div>
+        <div style="font-size:10px; margin-top:4px;">電子雲は半透明・風船状グラデーション (中性子で観測される水の水素の効果をモデル化)</div>
     </div>
-    <div id="controls">
-        <button id="arButton">🔘 AR開始 (カメラを許可)</button>
-        <div class="state-buttons" id="stateButtons" style="display: none;">
-            <button id="step0" class="active">①通常</button>
-            <button id="step1">②H⁺接近</button>
-            <button id="step2">③共鳴崩壊</button>
-            <button id="step3">④N電子回帰</button>
-            <button id="step4">⑤C-N柔軟化</button>
-        </div>
+    <div class="controls-panel">
+        <button id="step0" class="active">① 通常状態<br><small>平面・共鳴</small></button>
+        <button id="step1">② H⁺接近<br><small>N孤立電子対へ</small></button>
+        <button id="step2">③ 共鳴崩壊<br><small>π電子酸素偏在</small></button>
+        <button id="step3">④ N電子回帰<br><small>孤立電子対回復</small></button>
+        <button id="step4">⑤ C-N柔軟化<br><small>平面性喪失・回転</small></button>
+        <button id="animStart" class="anim-btn">▶ アニメーション</button>
+        <button id="animStop" class="anim-btn stop">■ 停止</button>
     </div>
-    <div class="status" id="statusText">待機中 | AR開始ボタンを押してください</div>
-    <div class="note">⚠️ httpsまたはlocalhostで動作 | スマホ推奨 | AR開始後、状態ボタンで電子雲が変化</div>
+    <div class="status" id="statusText">状態: 通常状態 (平面ペプチド結合・π電子非局在化)</div>
 
     <script type="importmap">
         {
@@ -168,58 +177,79 @@
 
     <script type="module">
         import * as THREE from 'three';
-        import { ARButton } from 'three/addons/webxr/ARButton.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { AnaglyphEffect } from 'three/addons/effects/AnaglyphEffect.js';
 
-        // --- セットアップ (AR対応) ---
+        // --- シーン初期化 ---
         const scene = new THREE.Scene();
-        scene.background = null; // 透明 → カメラ映像
+        scene.background = new THREE.Color(0x050b1a);
+        scene.fog = new THREE.FogExp2(0x050b1a, 0.008);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        camera.position.set(3.2, 2.0, 4.8);
+        camera.lookAt(0, 0.1, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.xr.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // 照明 (ARでは明るめ)
-        const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+        const effect = new AnaglyphEffect(renderer);
+        effect.setSize(window.innerWidth, window.innerHeight);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = false;
+        controls.enableZoom = true;
+        controls.target.set(0, 0.1, 0);
+
+        // 照明
+        const ambientLight = new THREE.AmbientLight(0x222222);
+        scene.add(ambientLight);
         const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
         mainLight.position.set(2, 3, 1.5);
-        const fillLight = new THREE.PointLight(0x88aaff, 0.5);
-        fillLight.position.set(0, 1.5, 2);
-        scene.add(ambient, mainLight, fillLight);
-
-        // 簡易グリッド (空間の目安)
-        const gridHelper = new THREE.GridHelper(2, 20, 0x88aaff, 0x335588);
-        gridHelper.position.y = -0.5;
+        scene.add(mainLight);
+        const backLight = new THREE.DirectionalLight(0x88aaff, 0.5);
+        backLight.position.set(-1, 1, -2);
+        scene.add(backLight);
+        const rimLight = new THREE.PointLight(0xffaa66, 0.4);
+        rimLight.position.set(1, 1.5, 2);
+        scene.add(rimLight);
+        
+        const gridHelper = new THREE.GridHelper(8, 20, 0x88aaff, 0x335588);
+        gridHelper.position.y = -1.2;
         gridHelper.material.transparent = true;
-        gridHelper.material.opacity = 0.4;
+        gridHelper.material.opacity = 0.25;
         scene.add(gridHelper);
-
-        // ========== ヘルパー関数 (原子・結合・電子雲) ==========
-        function addAtom(x, y, z, color, radius, emissive = false) {
-            const geom = new THREE.SphereGeometry(radius, 64, 64);
-            const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.3, metalness: 0.1, emissive: emissive ? 0x442200 : 0x000000 });
-            const mesh = new THREE.Mesh(geom, mat);
-            mesh.position.set(x, y, z);
-            return mesh;
+        
+        
+        let currentGroup = null;
+        
+        // --- ヘルパー関数 (原子・結合) ---
+        function addAtom(x, y, z, color, radius = 0.22, emissive = false) {
+            const geometry = new THREE.SphereGeometry(radius, 64, 64);
+            const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.3, metalness: 0.1, emissive: emissive ? 0x442200 : 0x000000 });
+            const sphere = new THREE.Mesh(geometry, material);
+            sphere.position.set(x, y, z);
+            return sphere;
         }
         
-        function addBond(p1, p2, color, radius) {
-            const start = new THREE.Vector3(p1.x, p1.y, p1.z);
-            const end = new THREE.Vector3(p2.x, p2.y, p2.z);
-            const dir = new THREE.Vector3().subVectors(end, start);
-            const len = dir.length();
+        function addBond(x1, y1, z1, x2, y2, z2, color = 0xccccaa, radius = 0.06) {
+            const start = new THREE.Vector3(x1, y1, z1);
+            const end = new THREE.Vector3(x2, y2, z2);
+            const direction = new THREE.Vector3().subVectors(end, start);
+            const length = direction.length();
             const center = start.clone().add(end).multiplyScalar(0.5);
-            const geometry = new THREE.CylinderGeometry(radius, radius, len, 12);
+            const geometry = new THREE.CylinderGeometry(radius, radius, length, 12);
             const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 });
             const cylinder = new THREE.Mesh(geometry, material);
             cylinder.position.copy(center);
-            cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+            cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), direction.clone().normalize());
             return cylinder;
         }
         
-        function createElectronCloud(color, posX, posY, posZ, scaleX, scaleY, scaleZ, opacity, emissiveTone) {
+        // 電子雲: 半透明・風船状 (複数球体でグラデーション)
+        function createElectronCloud(color, posX, posY, posZ, scaleX, scaleY, scaleZ, opacity = 0.55, emissiveTone = false) {
             const geometry = new THREE.SphereGeometry(0.65, 48, 48);
             const material = new THREE.MeshStandardMaterial({
                 color: color,
@@ -236,7 +266,7 @@
             return cloud;
         }
         
-        function addAdvancedCloud(color, pos, scaleVec, opacity, extraGlow) {
+        function addAdvancedCloud(color, pos, scaleVec, opacity, extraGlow = false) {
             const group = new THREE.Group();
             const main = createElectronCloud(color, 0, 0, 0, scaleVec.x, scaleVec.y, scaleVec.z, opacity, extraGlow);
             group.add(main);
@@ -247,42 +277,46 @@
             return group;
         }
         
-        // ========== 5つの状態を構築する関数 (元のHTMLから移植) ==========
-        // 状態0: 通常
+        // 通常状態: 平面ペプチド結合 (C, O, N, H がほぼ同一平面, π電子雲非局在化)
         function buildStage0() {
             const group = new THREE.Group();
+            // 平面座標: C(=O)とN、Hが同一平面上 (y=0付近)
             const cPos = new THREE.Vector3(0.0, 0.05, 0.0);
             const oPos = new THREE.Vector3(1.12, 0.08, 0.0);
             const nPos = new THREE.Vector3(-0.98, -0.02, 0.0);
             const hPos = new THREE.Vector3(-1.52, -0.48, 0.0);
             const caPos = new THREE.Vector3(-1.25, 0.92, 0.0);
             
-            group.add(addAtom(cPos.x, cPos.y, cPos.z, 0xcccccc, 0.24));
-            group.add(addAtom(oPos.x, oPos.y, oPos.z, 0xff8866, 0.22));
-            group.add(addAtom(nPos.x, nPos.y, nPos.z, 0x77aaff, 0.23));
-            group.add(addAtom(hPos.x, hPos.y, hPos.z, 0xeeeeff, 0.18));
-            group.add(addAtom(caPos.x, caPos.y, caPos.z, 0xccccaa, 0.22));
-            group.add(addBond(cPos, oPos, 0xdd9977, 0.07));
-            group.add(addBond(cPos, nPos, 0xccaa88, 0.07));
-            group.add(addBond(nPos, hPos, 0x99aacc, 0.05));
-            group.add(addBond(nPos, caPos, 0x99aacc, 0.05));
+            group.add(addAtom(cPos.x, cPos.y, cPos.z, 0xaaaaaa, 0.24));
+            group.add(addAtom(oPos.x, oPos.y, oPos.z, 0xdd5544, 0.22));
+            group.add(addAtom(nPos.x, nPos.y, nPos.z, 0x5599ff, 0.23));
+            group.add(addAtom(hPos.x, hPos.y, hPos.z, 0xeeeeee, 0.18));
+            group.add(addAtom(caPos.x, caPos.y, caPos.z, 0xaaaaaa, 0.22));
+            group.add(addBond(cPos.x, cPos.y, cPos.z, oPos.x, oPos.y, oPos.z, 0xdd9977, 0.07));
+            group.add(addBond(cPos.x, cPos.y, cPos.z, nPos.x, nPos.y, nPos.z, 0xccaa88, 0.07));
+            group.add(addBond(nPos.x, nPos.y, nPos.z, hPos.x, hPos.y, hPos.z, 0x99aacc, 0.05));
+            group.add(addBond(nPos.x, nPos.y, nPos.z, caPos.x, caPos.y, caPos.z, 0x99aacc, 0.05));
             
-            const piCloud = addAdvancedCloud(0xff6666, new THREE.Vector3(0.05,0.2,0.45), new THREE.Vector3(1.5,0.9,1.2), 0.65, true);
-            const piCloud2 = addAdvancedCloud(0xff5577, new THREE.Vector3(0.0,-0.15,-0.5), new THREE.Vector3(1.2,0.7,1.1), 0.55, false);
-            group.add(piCloud, piCloud2);
+            // π電子雲 (非局在化: C-N-O 領域に広がる赤色雲)
+            const piCloud = addAdvancedCloud(0xff4466, new THREE.Vector3(0.0, 0.2, 0.45), new THREE.Vector3(1.5, 0.9, 1.2), 0.6, true);
+            group.add(piCloud);
+            const piCloud2 = addAdvancedCloud(0xff5577, new THREE.Vector3(0.05, -0.15, -0.5), new THREE.Vector3(1.2, 0.7, 1.1), 0.5, false);
+            group.add(piCloud2);
             
-            const nLone1 = addAdvancedCloud(0x44aaff, new THREE.Vector3(-1.15,0.15,0.75), new THREE.Vector3(1.0,0.9,0.85), 0.7, true);
-            const nLone2 = addAdvancedCloud(0x77ccff, new THREE.Vector3(-1.3,-0.35,0.55), new THREE.Vector3(0.75,0.7,0.7), 0.6, false);
-            group.add(nLone1, nLone2);
+            // N孤立電子対 (青〜水色: 窒素から外側へ突出)
+            const nLonePair = addAdvancedCloud(0x33aaff, new THREE.Vector3(-1.15, 0.15, 0.75), new THREE.Vector3(1.0, 0.9, 0.85), 0.65, true);
+            group.add(nLonePair);
+            const nLonePair2 = addAdvancedCloud(0x66ccff, new THREE.Vector3(-1.3, -0.35, 0.55), new THREE.Vector3(0.75, 0.7, 0.7), 0.55, false);
+            group.add(nLonePair2);
             
-            const oLone1 = addAdvancedCloud(0x55ff77, new THREE.Vector3(1.35,0.6,0.4), new THREE.Vector3(0.8,0.7,0.85), 0.7, true);
-            const oLone2 = addAdvancedCloud(0x77ff99, new THREE.Vector3(1.3,-0.4,-0.5), new THREE.Vector3(0.85,0.75,0.75), 0.65, false);
+            // 酸素孤立電子対 (緑: 2つのローブ)
+            const oLone1 = addAdvancedCloud(0x44ff66, new THREE.Vector3(1.35, 0.6, 0.4), new THREE.Vector3(0.8, 0.7, 0.85), 0.65, true);
+            const oLone2 = addAdvancedCloud(0x66ff88, new THREE.Vector3(1.3, -0.4, -0.5), new THREE.Vector3(0.85, 0.75, 0.75), 0.6, false);
             group.add(oLone1, oLone2);
-            
             return group;
         }
         
-        // 状態1: H⁺接近
+        // H⁺接近: N孤立電子対にプロトンが近づく (水の水素イオンの相互作用)
         function buildStage1() {
             const group = new THREE.Group();
             const cPos = new THREE.Vector3(0.0, 0.05, 0.0);
@@ -290,35 +324,35 @@
             const nPos = new THREE.Vector3(-0.98, -0.02, 0.0);
             const hPos = new THREE.Vector3(-1.52, -0.48, 0.0);
             const caPos = new THREE.Vector3(-1.25, 0.92, 0.0);
-            const protonPos = new THREE.Vector3(-1.4, 0.4, 0.95);
+            const protonPos = new THREE.Vector3(-1.4, 0.4, 0.95); // N孤立電子対の方向
             
-            group.add(addAtom(cPos.x, cPos.y, cPos.z, 0xcccccc, 0.24));
-            group.add(addAtom(oPos.x, oPos.y, oPos.z, 0xff8866, 0.22));
-            group.add(addAtom(nPos.x, nPos.y, nPos.z, 0x77aaff, 0.23));
-            group.add(addAtom(hPos.x, hPos.y, hPos.z, 0xeeeeff, 0.18));
-            group.add(addAtom(caPos.x, caPos.y, caPos.z, 0xccccaa, 0.22));
+            group.add(addAtom(cPos.x, cPos.y, cPos.z, 0xaaaaaa, 0.24));
+            group.add(addAtom(oPos.x, oPos.y, oPos.z, 0xdd5544, 0.22));
+            group.add(addAtom(nPos.x, nPos.y, nPos.z, 0x5599ff, 0.23));
+            group.add(addAtom(hPos.x, hPos.y, hPos.z, 0xeeeeee, 0.18));
+            group.add(addAtom(caPos.x, caPos.y, caPos.z, 0xaaaaaa, 0.22));
             const proton = addAtom(protonPos.x, protonPos.y, protonPos.z, 0xffaa66, 0.17, true);
             group.add(proton);
+            group.add(addBond(cPos.x, cPos.y, cPos.z, oPos.x, oPos.y, oPos.z, 0xdd9977, 0.07));
+            group.add(addBond(cPos.x, cPos.y, cPos.z, nPos.x, nPos.y, nPos.z, 0xccaa88, 0.07));
+            group.add(addBond(nPos.x, nPos.y, nPos.z, hPos.x, hPos.y, hPos.z, 0x99aacc, 0.05));
+            group.add(addBond(nPos.x, nPos.y, nPos.z, caPos.x, caPos.y, caPos.z, 0x99aacc, 0.05));
             
-            group.add(addBond(cPos, oPos, 0xdd9977, 0.07));
-            group.add(addBond(cPos, nPos, 0xccaa88, 0.07));
-            group.add(addBond(nPos, hPos, 0x99aacc, 0.05));
-            group.add(addBond(nPos, caPos, 0x99aacc, 0.05));
-            
-            const nCloud = addAdvancedCloud(0x44aaff, new THREE.Vector3(-1.25,0.2,0.85), new THREE.Vector3(1.1,0.95,1.2), 0.75, true);
-            const protonBridge = addAdvancedCloud(0x55bbff, new THREE.Vector3(-1.38,0.38,0.9), new THREE.Vector3(0.65,0.6,0.7), 0.55, false);
-            group.add(nCloud, protonBridge);
-            
-            const piCloud = addAdvancedCloud(0xff6666, new THREE.Vector3(0.15,0.2,0.45), new THREE.Vector3(1.3,0.85,1.1), 0.6, true);
+            // N孤立電子雲がプロトン方向へ伸張
+            const nCloud = addAdvancedCloud(0x33aaff, new THREE.Vector3(-1.25, 0.2, 0.85), new THREE.Vector3(1.1, 0.95, 1.2), 0.7, true);
+            group.add(nCloud);
+            const protonBridge = addAdvancedCloud(0x55bbff, new THREE.Vector3(-1.38, 0.38, 0.9), new THREE.Vector3(0.65, 0.6, 0.7), 0.55, false);
+            group.add(protonBridge);
+            // π電子雲はやや酸素寄りに
+            const piCloud = addAdvancedCloud(0xff4466, new THREE.Vector3(0.15, 0.2, 0.45), new THREE.Vector3(1.3, 0.85, 1.1), 0.55, true);
             group.add(piCloud);
-            
-            const oLone1 = addAdvancedCloud(0x55ff77, new THREE.Vector3(1.35,0.6,0.4), new THREE.Vector3(0.8,0.7,0.85), 0.65, false);
-            const oLone2 = addAdvancedCloud(0x77ff99, new THREE.Vector3(1.3,-0.4,-0.5), new THREE.Vector3(0.85,0.75,0.75), 0.6, false);
+            const oLone1 = addAdvancedCloud(0x44ff66, new THREE.Vector3(1.35, 0.6, 0.4), new THREE.Vector3(0.8, 0.7, 0.85), 0.6, false);
+            const oLone2 = addAdvancedCloud(0x66ff88, new THREE.Vector3(1.3, -0.4, -0.5), new THREE.Vector3(0.85, 0.75, 0.75), 0.6, false);
             group.add(oLone1, oLone2);
             return group;
         }
         
-        // 状態2: 共鳴崩壊
+        // 共鳴崩壊: π電子が酸素側に強く偏り、N電子雲縮小 (プロトンがNに結合)
         function buildStage2() {
             const group = new THREE.Group();
             const cPos = new THREE.Vector3(0.0, 0.05, 0.0);
@@ -326,35 +360,34 @@
             const nPos = new THREE.Vector3(-0.98, -0.02, 0.0);
             const hPos = new THREE.Vector3(-1.52, -0.48, 0.0);
             const caPos = new THREE.Vector3(-1.25, 0.92, 0.0);
-            const protonPos = new THREE.Vector3(-1.3, 0.15, 0.7);
-            
-            group.add(addAtom(cPos.x, cPos.y, cPos.z, 0xcccccc, 0.24));
-            group.add(addAtom(oPos.x, oPos.y, oPos.z, 0xff8866, 0.22));
-            group.add(addAtom(nPos.x, nPos.y, nPos.z, 0x77aaff, 0.23));
-            group.add(addAtom(hPos.x, hPos.y, hPos.z, 0xeeeeff, 0.18));
-            group.add(addAtom(caPos.x, caPos.y, caPos.z, 0xccccaa, 0.22));
+            const protonPos = new THREE.Vector3(-1.3, 0.15, 0.7); // Nに接近・結合
+            group.add(addAtom(cPos.x, cPos.y, cPos.z, 0xaaaaaa, 0.24));
+            group.add(addAtom(oPos.x, oPos.y, oPos.z, 0xdd5544, 0.22));
+            group.add(addAtom(nPos.x, nPos.y, nPos.z, 0x5599ff, 0.23));
+            group.add(addAtom(hPos.x, hPos.y, hPos.z, 0xeeeeee, 0.18));
+            group.add(addAtom(caPos.x, caPos.y, caPos.z, 0xaaaaaa, 0.22));
             const proton = addAtom(protonPos.x, protonPos.y, protonPos.z, 0xffaa66, 0.18, true);
             group.add(proton);
+            group.add(addBond(nPos.x, nPos.y, nPos.z, protonPos.x, protonPos.y, protonPos.z, 0xddcc99, 0.06));
+            group.add(addBond(cPos.x, cPos.y, cPos.z, oPos.x, oPos.y, oPos.z, 0xdd8866, 0.08));
+            group.add(addBond(cPos.x, cPos.y, cPos.z, nPos.x, nPos.y, nPos.z, 0xccaa88, 0.07));
+            group.add(addBond(nPos.x, nPos.y, nPos.z, hPos.x, hPos.y, hPos.z, 0x99aacc, 0.05));
+            group.add(addBond(nPos.x, nPos.y, nPos.z, caPos.x, caPos.y, caPos.z, 0x99aacc, 0.05));
             
-            group.add(addBond(nPos, protonPos, 0xddcc99, 0.06));
-            group.add(addBond(cPos, oPos, 0xdd8866, 0.08));
-            group.add(addBond(cPos, nPos, 0xccaa88, 0.07));
-            group.add(addBond(nPos, hPos, 0x99aacc, 0.05));
-            group.add(addBond(nPos, caPos, 0x99aacc, 0.05));
-            
-            const piOxy = addAdvancedCloud(0xff6666, new THREE.Vector3(0.95,0.5,0.4), new THREE.Vector3(1.2,1.0,1.1), 0.75, true);
+            // π電子雲が酸素周りに強く集中
+            const piOxy = addAdvancedCloud(0xff4466, new THREE.Vector3(0.95, 0.5, 0.4), new THREE.Vector3(1.2, 1.0, 1.1), 0.7, true);
             group.add(piOxy);
-            
-            const nCloudSmall = addAdvancedCloud(0x44aaff, new THREE.Vector3(-1.15,-0.25,0.6), new THREE.Vector3(0.55,0.55,0.5), 0.45, false);
+            // N孤立電子対は縮小 (プロトン化により減少)
+            const nCloudSmall = addAdvancedCloud(0x33aaff, new THREE.Vector3(-1.15, -0.25, 0.6), new THREE.Vector3(0.55, 0.55, 0.5), 0.45, false);
             group.add(nCloudSmall);
-            
-            const oLone1 = addAdvancedCloud(0x55ff77, new THREE.Vector3(1.4,0.65,0.35), new THREE.Vector3(0.95,0.85,0.9), 0.8, true);
-            const oLone2 = addAdvancedCloud(0x77ff99, new THREE.Vector3(1.35,-0.45,-0.55), new THREE.Vector3(0.95,0.85,0.8), 0.75, false);
+            // 酸素孤立電子対は強調
+            const oLone1 = addAdvancedCloud(0x44ff66, new THREE.Vector3(1.4, 0.65, 0.35), new THREE.Vector3(0.95, 0.85, 0.9), 0.75, true);
+            const oLone2 = addAdvancedCloud(0x66ff88, new THREE.Vector3(1.35, -0.45, -0.55), new THREE.Vector3(0.95, 0.85, 0.8), 0.7, false);
             group.add(oLone1, oLone2);
             return group;
         }
         
-        // 状態3: N電子回帰
+        // N電子回帰: プロトンが解離し、N孤立電子対が回復 (平面性復元)
         function buildStage3() {
             const group = new THREE.Group();
             const cPos = new THREE.Vector3(0.0, 0.05, 0.0);
@@ -362,147 +395,124 @@
             const nPos = new THREE.Vector3(-0.98, -0.02, 0.0);
             const hPos = new THREE.Vector3(-1.52, -0.48, 0.0);
             const caPos = new THREE.Vector3(-1.25, 0.92, 0.0);
+            group.add(addAtom(cPos.x, cPos.y, cPos.z, 0xaaaaaa, 0.24));
+            group.add(addAtom(oPos.x, oPos.y, oPos.z, 0xdd5544, 0.22));
+            group.add(addAtom(nPos.x, nPos.y, nPos.z, 0x5599ff, 0.23));
+            group.add(addAtom(hPos.x, hPos.y, hPos.z, 0xeeeeee, 0.18));
+            group.add(addAtom(caPos.x, caPos.y, caPos.z, 0xaaaaaa, 0.22));
+            group.add(addBond(cPos.x, cPos.y, cPos.z, oPos.x, oPos.y, oPos.z, 0xdd9977, 0.07));
+            group.add(addBond(cPos.x, cPos.y, cPos.z, nPos.x, nPos.y, nPos.z, 0xccaa88, 0.07));
+            group.add(addBond(nPos.x, nPos.y, nPos.z, hPos.x, hPos.y, hPos.z, 0x99aacc, 0.05));
+            group.add(addBond(nPos.x, nPos.y, nPos.z, caPos.x, caPos.y, caPos.z, 0x99aacc, 0.05));
             
-            group.add(addAtom(cPos.x, cPos.y, cPos.z, 0xcccccc, 0.24));
-            group.add(addAtom(oPos.x, oPos.y, oPos.z, 0xff8866, 0.22));
-            group.add(addAtom(nPos.x, nPos.y, nPos.z, 0x77aaff, 0.23));
-            group.add(addAtom(hPos.x, hPos.y, hPos.z, 0xeeeeff, 0.18));
-            group.add(addAtom(caPos.x, caPos.y, caPos.z, 0xccccaa, 0.22));
-            group.add(addBond(cPos, oPos, 0xdd9977, 0.07));
-            group.add(addBond(cPos, nPos, 0xccaa88, 0.07));
-            group.add(addBond(nPos, hPos, 0x99aacc, 0.05));
-            group.add(addBond(nPos, caPos, 0x99aacc, 0.05));
-            
-            const nCloudBig = addAdvancedCloud(0x44aaff, new THREE.Vector3(-1.2,0.1,0.8), new THREE.Vector3(1.15,1.05,1.0), 0.8, true);
+            // N孤立電子対 大きく回復
+            const nCloudBig = addAdvancedCloud(0x3399ff, new THREE.Vector3(-1.2, 0.1, 0.8), new THREE.Vector3(1.15, 1.05, 1.0), 0.75, true);
             group.add(nCloudBig);
-            
-            const piCloud = addAdvancedCloud(0xff6666, new THREE.Vector3(0.05,0.25,0.45), new THREE.Vector3(1.4,0.9,1.2), 0.65, true);
+            // π電子雲 中間的 (非局在化戻る)
+            const piCloud = addAdvancedCloud(0xff4466, new THREE.Vector3(0.05, 0.25, 0.45), new THREE.Vector3(1.4, 0.9, 1.2), 0.6, true);
             group.add(piCloud);
-            
-            const oLone1 = addAdvancedCloud(0x55ff77, new THREE.Vector3(1.35,0.6,0.4), new THREE.Vector3(0.85,0.75,0.85), 0.7, false);
-            const oLone2 = addAdvancedCloud(0x77ff99, new THREE.Vector3(1.3,-0.4,-0.5), new THREE.Vector3(0.9,0.8,0.75), 0.7, false);
+            const oLone1 = addAdvancedCloud(0x44ff66, new THREE.Vector3(1.35, 0.6, 0.4), new THREE.Vector3(0.85, 0.75, 0.85), 0.65, false);
+            const oLone2 = addAdvancedCloud(0x66ff88, new THREE.Vector3(1.3, -0.4, -0.5), new THREE.Vector3(0.9, 0.8, 0.75), 0.65, false);
             group.add(oLone1, oLone2);
             return group;
         }
         
-        // 状態4: C-N柔軟化 (平面性喪失)
+        // C-N柔軟化: 平面性喪失、Nが平面から外れて回転可能状態を表現 (PDFの「ペプチド結合の柔軟化」)
         function buildStage4() {
             const group = new THREE.Group();
+            // NをZ方向に大きくずらし、平面性を崩す
             const cPos = new THREE.Vector3(0.0, 0.05, 0.0);
             const oPos = new THREE.Vector3(1.12, 0.08, 0.0);
-            const nPos = new THREE.Vector3(-0.85, -0.45, 0.65);
+            const nPos = new THREE.Vector3(-0.85, -0.45, 0.65); // 平面から逸脱
             const hPos = new THREE.Vector3(-1.4, -0.95, 0.55);
             const caPos = new THREE.Vector3(-1.15, 0.65, 0.8);
-            
-            group.add(addAtom(cPos.x, cPos.y, cPos.z, 0xcccccc, 0.24));
-            group.add(addAtom(oPos.x, oPos.y, oPos.z, 0xff8866, 0.22));
+            group.add(addAtom(cPos.x, cPos.y, cPos.z, 0xaaaaaa, 0.24));
+            group.add(addAtom(oPos.x, oPos.y, oPos.z, 0xdd5544, 0.22));
             group.add(addAtom(nPos.x, nPos.y, nPos.z, 0x88aaff, 0.24));
-            group.add(addAtom(hPos.x, hPos.y, hPos.z, 0xeeeeff, 0.18));
-            group.add(addAtom(caPos.x, caPos.y, caPos.z, 0xccccaa, 0.22));
-            group.add(addBond(cPos, oPos, 0xdd9977, 0.07));
-            group.add(addBond(cPos, nPos, 0xccaa88, 0.08));
-            group.add(addBond(nPos, hPos, 0x99aacc, 0.05));
-            group.add(addBond(nPos, caPos, 0x99aacc, 0.05));
+            group.add(addAtom(hPos.x, hPos.y, hPos.z, 0xeeeeee, 0.18));
+            group.add(addAtom(caPos.x, caPos.y, caPos.z, 0xaaaaaa, 0.22));
+            group.add(addBond(cPos.x, cPos.y, cPos.z, oPos.x, oPos.y, oPos.z, 0xdd9977, 0.07));
+            group.add(addBond(cPos.x, cPos.y, cPos.z, nPos.x, nPos.y, nPos.z, 0xccaa88, 0.08));
+            group.add(addBond(nPos.x, nPos.y, nPos.z, hPos.x, hPos.y, hPos.z, 0x99aacc, 0.05));
+            group.add(addBond(nPos.x, nPos.y, nPos.z, caPos.x, caPos.y, caPos.z, 0x99aacc, 0.05));
             
-            const piCloudFlex = addAdvancedCloud(0xff6666, new THREE.Vector3(0.4,0.5,0.3), new THREE.Vector3(1.15,0.85,1.05), 0.6, true);
+            // 電子雲も非対称に
+            const piCloudFlex = addAdvancedCloud(0xff4466, new THREE.Vector3(0.4, 0.5, 0.3), new THREE.Vector3(1.15, 0.85, 1.05), 0.55, true);
             group.add(piCloudFlex);
-            
-            const nCloudFlex = addAdvancedCloud(0x44aaff, new THREE.Vector3(-1.05,-0.25,1.05), new THREE.Vector3(0.95,0.9,0.9), 0.7, false);
-            const nCloudFlex2 = addAdvancedCloud(0x77ccff, new THREE.Vector3(-0.95,0.6,0.7), new THREE.Vector3(0.75,0.7,0.7), 0.6, false);
-            group.add(nCloudFlex, nCloudFlex2);
-            
-            const oLone1 = addAdvancedCloud(0x55ff77, new THREE.Vector3(1.35,0.6,0.3), new THREE.Vector3(0.85,0.75,0.85), 0.7, false);
-            const oLone2 = addAdvancedCloud(0x77ff99, new THREE.Vector3(1.3,-0.4,-0.4), new THREE.Vector3(0.9,0.8,0.75), 0.7, false);
+            const nCloudFlex = addAdvancedCloud(0x3399ff, new THREE.Vector3(-1.05, -0.25, 1.05), new THREE.Vector3(0.95, 0.9, 0.9), 0.65, false);
+            group.add(nCloudFlex);
+            const nCloudFlex2 = addAdvancedCloud(0x66aaff, new THREE.Vector3(-0.95, 0.6, 0.7), new THREE.Vector3(0.75, 0.7, 0.7), 0.55, false);
+            group.add(nCloudFlex2);
+            const oLone1 = addAdvancedCloud(0x44ff66, new THREE.Vector3(1.35, 0.6, 0.3), new THREE.Vector3(0.85, 0.75, 0.85), 0.65, false);
+            const oLone2 = addAdvancedCloud(0x66ff88, new THREE.Vector3(1.3, -0.4, -0.4), new THREE.Vector3(0.9, 0.8, 0.75), 0.65, false);
             group.add(oLone1, oLone2);
             return group;
         }
         
-        const stageBuilders = [buildStage0, buildStage1, buildStage2, buildStage3, buildStage4];
+        const stages = [buildStage0, buildStage1, buildStage2, buildStage3, buildStage4];
         const stepNames = [
-            "通常状態: 平面ペプチド結合・π電子非局在化",
+            "通常状態: 平面ペプチド結合・π電子非局在化 (共鳴構造)",
             "H⁺接近: 水素イオンがN孤立電子対と相互作用",
             "共鳴崩壊: π電子が酸素側に偏在・N電子密度減少",
             "N電子回帰: 孤立電子対回復・平面性復元",
-            "C-N柔軟化: 平面性喪失・結合回転可能"
+            "C-N柔軟化: 平面性喪失・結合回転可能 (部位特異的柔軟化)"
         ];
         
-        let currentModelGroup = null;
+        let animationInterval = null;
+        let currentStep = 0;
         
         function switchStage(index) {
-            if (currentModelGroup) scene.remove(currentModelGroup);
-            const newGroup = stageBuilders[index]();
-            currentModelGroup = newGroup;
-            // ARではモデルを適度なスケール・位置に (原点に配置、スケール調整)
-            currentModelGroup.position.set(0, 0, 0);
-            currentModelGroup.scale.set(0.8, 0.8, 0.8);
-            scene.add(currentModelGroup);
+            if (currentGroup) scene.remove(currentGroup);
+            const newGroup = stages[index]();
+            currentGroup = newGroup;
+            scene.add(currentGroup);
+            currentStep = index;
             document.getElementById("statusText").innerHTML = `状態: ${stepNames[index]}`;
-            // ボタンのアクティブ表示更新
-            for (let i=0; i<=4; i++) {
+            for(let i=0;i<5;i++) {
                 const btn = document.getElementById(`step${i}`);
-                if (btn) {
-                    if (i === index) btn.classList.add("active");
-                    else btn.classList.remove("active");
-                }
+                if(i===index) btn.classList.add("active");
+                else btn.classList.remove("active");
             }
         }
         
-        // AR開始処理
-        let xrSessionActive = false;
-        const arButton = document.getElementById('arButton');
-        const stateButtonsDiv = document.getElementById('stateButtons');
+        function startAnimation() {
+            if (animationInterval) clearInterval(animationInterval);
+            animationInterval = setInterval(() => {
+                let next = (currentStep + 1) % 5;
+                switchStage(next);
+            }, 3500);
+        }
         
-        arButton.addEventListener('click', () => {
-            // Three.jsのARButtonを作成してクリックすると、自動的にXRセッションが始まる
-            const arBtn = ARButton.createButton(renderer, { requiredFeatures: ['local-floor'] });
-            // 既存のボタンを置き換える
-            arBtn.style.display = 'none';
-            document.body.appendChild(arBtn);
-            arBtn.click();
-            // セッション開始を検知する簡易的な方法: renderer.xrのセッションを監視
-            const checkInterval = setInterval(() => {
-                if (renderer.xr.isPresenting) {
-                    clearInterval(checkInterval);
-                    xrSessionActive = true;
-                    arButton.style.display = 'none';
-                    stateButtonsDiv.style.display = 'flex';
-                    document.getElementById('statusText').innerHTML = 'AR稼働中 | 状態ボタンで電子雲切替';
-                    // 最初の状態を表示 (状態0)
-                    switchStage(0);
-                }
-            }, 500);
-            // タイムアウト
-            setTimeout(() => clearInterval(checkInterval), 10000);
-        });
+        function stopAnimation() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+        }
         
-        // 状態ボタンのイベント登録
-        document.getElementById('step0').addEventListener('click', () => { if (xrSessionActive) switchStage(0); });
-        document.getElementById('step1').addEventListener('click', () => { if (xrSessionActive) switchStage(1); });
-        document.getElementById('step2').addEventListener('click', () => { if (xrSessionActive) switchStage(2); });
-        document.getElementById('step3').addEventListener('click', () => { if (xrSessionActive) switchStage(3); });
-        document.getElementById('step4').addEventListener('click', () => { if (xrSessionActive) switchStage(4); });
+        document.getElementById("step0").addEventListener("click", () => { stopAnimation(); switchStage(0); });
+        document.getElementById("step1").addEventListener("click", () => { stopAnimation(); switchStage(1); });
+        document.getElementById("step2").addEventListener("click", () => { stopAnimation(); switchStage(2); });
+        document.getElementById("step3").addEventListener("click", () => { stopAnimation(); switchStage(3); });
+        document.getElementById("step4").addEventListener("click", () => { stopAnimation(); switchStage(4); });
+        document.getElementById("animStart").addEventListener("click", startAnimation);
+        document.getElementById("animStop").addEventListener("click", stopAnimation);
         
-        // レンダリングループ (AR対応)
+        switchStage(0);
+        
         function animate() {
-            renderer.setAnimationLoop(() => {
-                renderer.render(scene, camera);
-            });
+            controls.update();
+            effect.render(scene, camera);
+            requestAnimationFrame(animate);
         }
         animate();
         
-        window.addEventListener('resize', () => {
+        window.addEventListener("resize", onWindowResize);
+        function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-        
-        // WebXR非対応の場合のフォールバック
-        if (!navigator.xr) {
-            document.getElementById('statusText').innerHTML = '⚠️ お使いのブラウザはWebXR非対応です。スマホのChrome/Safariをお試しください。';
-            arButton.disabled = true;
+            effect.setSize(window.innerWidth, window.innerHeight);
         }
-        
-        // 初期表示はモデルなし (AR開始まで)
     </script>
 </body>
 </html>
